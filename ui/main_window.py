@@ -1,8 +1,9 @@
-from PyQt5.QtWidgets import QMainWindow, QMenuBar, QMenu, QToolBar, QAction, QStatusBar, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QGraphicsView, QGraphicsScene
+from PyQt5.QtWidgets import QMainWindow, QMenuBar, QMenu, QToolBar, QAction, QStatusBar, QWidget, QVBoxLayout, QPushButton, QFrame, QGraphicsView, QGraphicsScene
 from PyQt5.QtGui import QPainter
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from .draggable_component import DraggableComponent
 from .wire import Wire
+from components.op_amp import OpAmp
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -18,6 +19,10 @@ class MainWindow(QMainWindow):
         self.connections = []
         self.drawing_wire = False
         self.start_point = None
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_simulation)
+        self.timer.start(100)  # Update every 100 milliseconds
 
     def create_menu(self):
         menubar = self.menuBar()
@@ -70,7 +75,7 @@ class MainWindow(QMainWindow):
 
     def add_component(self, component_type):
         if component_type == "Op Amp":
-            op_amp = DraggableComponent(self.scene, "Op Amp")
+            op_amp = DraggableComponent(self.scene, "Op Amp", OpAmp())
             op_amp.setPos(50, 50)
             self.scene.addItem(op_amp)
             self.status.showMessage("Op Amp added")
@@ -79,13 +84,15 @@ class MainWindow(QMainWindow):
         start_pos = start_item.scenePos()
         end_pos = end_item.scenePos()
         wire = Wire(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
+        wire.start_point = start_item
+        wire.end_point = end_item
         self.scene.addItem(wire)
         self.connections.append(wire)
         self.status.showMessage("Wire added")
 
     def eventFilter(self, source, event):
         if event.type() == event.MouseButtonPress and event.button() == Qt.LeftButton:
-            item = self.scene.itemAt(event.pos(), QGraphicsView().transform())
+            item = self.scene.itemAt(self.canvas.mapToScene(event.pos()), QGraphicsView().transform())
             if isinstance(item, ConnectionPoint):
                 if not self.drawing_wire:
                     self.drawing_wire = True
@@ -96,3 +103,26 @@ class MainWindow(QMainWindow):
                     self.start_point = None
             return True
         return super().eventFilter(source, event)
+
+    def update_simulation(self):
+        self.propagate_signals()
+        self.scene.update()
+        self.log_signal_values()
+
+    def propagate_signals(self):
+        for wire in self.connections:
+            if wire.start_point.point_type == 'output' and wire.start_point.signal is not None:
+                wire.end_point.set_signal(wire.start_point.get_signal())
+                if isinstance(wire.end_point.parentItem(), DraggableComponent):
+                    wire.end_point.parentItem().compute()
+
+    def log_signal_values(self):
+        messages = []
+        for item in self.scene.items():
+            if isinstance(item, DraggableComponent):
+                for point in item.connection_points:
+                    if point.point_type == 'output':
+                        signal = point.get_signal()
+                        if signal is not None:
+                            messages.append(f"Component at ({item.x()}, {item.y()}) Output: {signal}")
+        self.status.showMessage(" | ".join(messages))

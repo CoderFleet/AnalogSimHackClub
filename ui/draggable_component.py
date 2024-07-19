@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsTextItem, QGraphicsSceneMouseEvent
-from PyQt5.QtGui import QBrush
-from PyQt5.QtCore import Qt, QGraphicsItem
+from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem
+from PyQt5.QtGui import QBrush, QPen, QPainter
+from PyQt5.QtCore import Qt, QRectF
 from .connection_point import ConnectionPoint
 
 class DraggableComponent(QGraphicsRectItem):
@@ -20,6 +20,8 @@ class DraggableComponent(QGraphicsRectItem):
             ConnectionPoint(self, 50, 0, 'input'),
             ConnectionPoint(self, 50, 50, 'output')
         ]
+        self.value_display = QGraphicsTextItem("Value: 0", self)
+        self.value_display.setPos(10, 35)
 
     def compute(self):
         for point in self.connection_points:
@@ -29,3 +31,9 @@ class DraggableComponent(QGraphicsRectItem):
                 for p in self.connection_points:
                     if p.point_type == 'output':
                         p.set_signal(self.component_logic.output_signal)
+                        self.value_display.setPlainText(f"Value: {self.component_logic.output_signal}")
+
+    def paint(self, painter, option, widget):
+        super().paint(painter, option, widget)
+        painter.setPen(QPen(Qt.black, 1))
+        painter.drawRect(QRectF(self.rect()))
