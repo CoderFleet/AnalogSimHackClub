@@ -1,27 +1,27 @@
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem
+from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem, QGraphicsSceneMouseEvent
 from PyQt5.QtGui import QBrush, QPen, QPainter
 from PyQt5.QtCore import Qt, QRectF
 from .connection_point import ConnectionPoint
 
 class DraggableComponent(QGraphicsRectItem):
-    def __init__(self, scene, text, component_logic):
-        super().__init__(0, 0, 100, 50)
+    def __init__(self, scene, label, logic):
+        super().__init__(0, 0, 120, 60)
         self.setBrush(QBrush(Qt.lightGray))
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.text = QGraphicsTextItem(text, self)
-        self.text.setPos(25, 15)
+        self.label = QGraphicsTextItem(label, self)
+        self.label.setPos(30, 20)
         self.scene = scene
-        self.component_logic = component_logic
+        self.component_logic = logic
 
         self.connection_points = [
-            ConnectionPoint(self, 0, 25, 'input'),
-            ConnectionPoint(self, 100, 25, 'output'),
-            ConnectionPoint(self, 50, 0, 'input'),
-            ConnectionPoint(self, 50, 50, 'output')
+            ConnectionPoint(self, 0, 30, 'input'),
+            ConnectionPoint(self, 120, 30, 'output'),
+            ConnectionPoint(self, 60, 0, 'input'),
+            ConnectionPoint(self, 60, 60, 'output')
         ]
         self.value_display = QGraphicsTextItem("Value: 0", self)
-        self.value_display.setPos(10, 35)
+        self.value_display.setPos(10, 40)
 
     def compute(self):
         for point in self.connection_points:
@@ -35,5 +35,11 @@ class DraggableComponent(QGraphicsRectItem):
 
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
-        painter.setPen(QPen(Qt.black, 1))
+        painter.setPen(QPen(Qt.black, 2))
         painter.drawRect(QRectF(self.rect()))
+
+    def mouseDoubleClickEvent(self, event: QGraphicsSceneMouseEvent):
+        if self.isSelected():
+            from .properties_dialog import PropertiesDialog
+            dialog = PropertiesDialog(self)
+            dialog.exec_()

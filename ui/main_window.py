@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
     def update_simulation(self):
         self.propagate_signals()
         self.scene.update()
-        self.log_signal_values()
+        self.show_signal_values()
 
     def propagate_signals(self):
         for wire in self.connections:
@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
                 if isinstance(wire.end_point.parentItem(), DraggableComponent):
                     wire.end_point.parentItem().compute()
 
-    def log_signal_values(self):
+    def show_signal_values(self):
         messages = []
         for item in self.scene.items():
             if isinstance(item, DraggableComponent):
