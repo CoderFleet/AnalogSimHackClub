@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QMenuBar, QMenu, QToolBar, QAction, QStatusBar, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame
+from PyQt5.QtWidgets import QMainWindow, QMenuBar, QMenu, QToolBar, QAction, QStatusBar, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QGraphicsView, QGraphicsScene
 from ui.draggable_component import DraggableComponent
+from ui.wire.py import Wire
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -12,6 +13,7 @@ class MainWindow(QMainWindow):
         self.create_canvas()
         self.create_statusbar()
         self.create_component_library()
+        self.connections = []
 
     def create_menu(self):
         menubar = self.menuBar()
@@ -39,9 +41,11 @@ class MainWindow(QMainWindow):
     def create_canvas(self):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
-        self.canvas = QFrame(self.central_widget)
-        self.canvas.setStyleSheet("background-color: white; border: 1px solid black;")
+        self.canvas = QGraphicsView(self.central_widget)
         self.canvas.setGeometry(150, 0, 650, 600)
+        self.scene = QGraphicsScene()
+        self.canvas.setScene(self.scene)
+        self.canvas.setRenderHint(QPainter.Antialiasing)
 
     def create_statusbar(self):
         self.status = QStatusBar()
@@ -60,6 +64,13 @@ class MainWindow(QMainWindow):
 
     def add_component(self, component_type):
         if component_type == "Op Amp":
-            op_amp = DraggableComponent(self.canvas, "Op Amp")
-            op_amp.move(50, 50)
-            op_amp.show()
+            op_amp = DraggableComponent(self.scene, "Op Amp")
+            op_amp.setPos(50, 50)
+            self.scene.addItem(op_amp)
+            self.status.showMessage("Op Amp added")
+
+    def add_wire(self, x1, y1, x2, y2):
+        wire = Wire(x1, y1, x2, y2)
+        self.scene.addItem(wire)
+        self.connections.append(wire)
+        self.status.showMessage("Wire added")

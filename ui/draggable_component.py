@@ -1,20 +1,19 @@
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsTextItem
+from PyQt5.QtGui import QBrush
+from PyQt5.QtCore import Qt
 
-class DraggableComponent(QLabel):
-    def __init__(self, parent, text):
-        super().__init__(text, parent)
-        self.setStyleSheet("background-color: lightblue; border: 1px solid black;")
-        self.setAlignment(Qt.AlignCenter)
-        self.setFixedSize(100, 50)
-        self.drag_start_position = None
+class DraggableComponent(QGraphicsRectItem):
+    def __init__(self, scene, text):
+        super().__init__(0, 0, 100, 50)
+        self.setBrush(QBrush(Qt.lightGray))
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.text = QGraphicsTextItem(text, self)
+        self.text.setPos(25, 15)
+        self.scene = scene
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.drag_start_position = event.pos()
-
-    def mouseMoveEvent(self, event):
-        if event.buttons() == Qt.LeftButton:
-            drag_distance = (event.pos() - self.drag_start_position).manhattanLength()
-            if drag_distance > 0:
-                self.move(self.mapToParent(event.pos() - self.drag_start_position))
+            self.scene.clearSelection()
+            self.setSelected(True)
+        super().mousePressEvent(event)
