@@ -3,6 +3,8 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtCore import Qt, QTimer
 from .draggable_component import DraggableComponent
 from .wire import Wire
+from .export_dialog import ExportDialog
+from .load_save_dialog import LoadSaveDialog
 from components.op_amp import OpAmp
 
 class MainWindow(QMainWindow):
@@ -19,6 +21,7 @@ class MainWindow(QMainWindow):
         self.connections = []
         self.drawing_wire = False
         self.start_point = None
+        self.simulation_running = False
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_simulation)
@@ -30,12 +33,24 @@ class MainWindow(QMainWindow):
         new_action = QAction("New", self)
         open_action = QAction("Open", self)
         save_action = QAction("Save", self)
+        export_action = QAction("Export", self)
+        load_action = QAction("Load", self)
+        start_simulation_action = QAction("Start Simulation", self)
+        stop_simulation_action = QAction("Stop Simulation", self)
         exit_action = QAction("Exit", self)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(new_action)
         file_menu.addAction(open_action)
         file_menu.addAction(save_action)
+        file_menu.addAction(export_action)
+        file_menu.addAction(load_action)
+        file_menu.addAction(start_simulation_action)
+        file_menu.addAction(stop_simulation_action)
         file_menu.addAction(exit_action)
+        export_action.triggered.connect(self.export_simulation)
+        load_action.triggered.connect(self.load_simulation)
+        start_simulation_action.triggered.connect(self.start_simulation)
+        stop_simulation_action.triggered.connect(self.stop_simulation)
 
     def create_toolbar(self):
         toolbar = QToolBar()
@@ -105,9 +120,10 @@ class MainWindow(QMainWindow):
         return super().eventFilter(source, event)
 
     def update_simulation(self):
-        self.propagate_signals()
-        self.scene.update()
-        self.show_signal_values()
+        if self.simulation_running:
+            self.propagate_signals()
+            self.scene.update()
+            self.show_signal_values()
 
     def propagate_signals(self):
         for wire in self.connections:
@@ -126,3 +142,20 @@ class MainWindow(QMainWindow):
                         if signal is not None:
                             messages.append(f"Component at ({item.x()}, {item.y()}) Output: {signal}")
         self.status.showMessage(" | ".join(messages))
+
+    def export_simulation(self):
+        items = [item for item in self.scene.items() if isinstance(item, DraggableComponent)]
+        dialog = ExportDialog(items)
+        dialog.exec_()
+
+    def load_simulation(self):
+        dialog = LoadSaveDialog(self.scene, mode='load')
+        dialog.exec_()
+
+    def start_simulation(self):
+        self.simulation_running = True
+        self.status.showMessage("Simulation started")
+
+    def stop_simulation(self):
+        self.simulation_running = False
+        self.status.showMessage("Simulation stopped")
