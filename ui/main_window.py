@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QMainWindow, QMenuBar, QMenu, QToolBar, QAction, QStatusBar, QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QMainWindow, QMenuBar, QMenu, QToolBar, QAction, QStatusBar, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame
+from ui.draggable_component import DraggableComponent
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -10,6 +11,7 @@ class MainWindow(QMainWindow):
         self.create_toolbar()
         self.create_canvas()
         self.create_statusbar()
+        self.create_component_library()
 
     def create_menu(self):
         menubar = self.menuBar()
@@ -35,13 +37,29 @@ class MainWindow(QMainWindow):
         toolbar.addAction(save_action)
 
     def create_canvas(self):
-        self.canvas = QWidget()
-        self.canvas.setStyleSheet("background-color: white;")
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setCentralWidget(self.canvas)
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.canvas = QFrame(self.central_widget)
+        self.canvas.setStyleSheet("background-color: white; border: 1px solid black;")
+        self.canvas.setGeometry(150, 0, 650, 600)
 
     def create_statusbar(self):
         self.status = QStatusBar()
         self.setStatusBar(self.status)
         self.status.showMessage("Welcome to Analog Computer Simulation")
+
+    def create_component_library(self):
+        self.library_frame = QFrame(self.central_widget)
+        self.library_frame.setStyleSheet("background-color: lightgray; border: 1px solid black;")
+        self.library_frame.setGeometry(0, 0, 150, 600)
+
+        layout = QVBoxLayout(self.library_frame)
+        op_amp_button = QPushButton("Op Amp", self.library_frame)
+        op_amp_button.clicked.connect(lambda: self.add_component("Op Amp"))
+        layout.addWidget(op_amp_button)
+
+    def add_component(self, component_type):
+        if component_type == "Op Amp":
+            op_amp = DraggableComponent(self.canvas, "Op Amp")
+            op_amp.move(50, 50)
+            op_amp.show()
