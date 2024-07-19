@@ -1,7 +1,8 @@
 class OpAmp:
     def __init__(self):
-        self.input_voltage = 0
-        self.output_voltage = 0
+        self.input_signal = None
+        self.output_signal = None
 
-    def simulate(self):
-        self.output_voltage = self.input_voltage * 10
+    def compute_output(self):
+        if self.input_signal is not None:
+            self.output_signal = self.input_signal * 10

@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QMainWindow, QMenuBar, QMenu, QToolBar, QAction, QStatusBar, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QGraphicsView, QGraphicsScene
-from ui.draggable_component import DraggableComponent
-from ui.wire.py import Wire
+from PyQt5.QtGui import QPainter
+from PyQt5.QtCore import Qt
+from .draggable_component import DraggableComponent
+from .wire import Wire
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -14,6 +16,8 @@ class MainWindow(QMainWindow):
         self.create_statusbar()
         self.create_component_library()
         self.connections = []
+        self.drawing_wire = False
+        self.start_point = None
 
     def create_menu(self):
         menubar = self.menuBar()
@@ -46,6 +50,8 @@ class MainWindow(QMainWindow):
         self.scene = QGraphicsScene()
         self.canvas.setScene(self.scene)
         self.canvas.setRenderHint(QPainter.Antialiasing)
+        self.canvas.setMouseTracking(True)
+        self.canvas.viewport().installEventFilter(self)
 
     def create_statusbar(self):
         self.status = QStatusBar()
@@ -69,8 +75,24 @@ class MainWindow(QMainWindow):
             self.scene.addItem(op_amp)
             self.status.showMessage("Op Amp added")
 
-    def add_wire(self, x1, y1, x2, y2):
-        wire = Wire(x1, y1, x2, y2)
+    def add_wire(self, start_item, end_item):
+        start_pos = start_item.scenePos()
+        end_pos = end_item.scenePos()
+        wire = Wire(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
         self.scene.addItem(wire)
         self.connections.append(wire)
         self.status.showMessage("Wire added")
+
+    def eventFilter(self, source, event):
+        if event.type() == event.MouseButtonPress and event.button() == Qt.LeftButton:
+            item = self.scene.itemAt(event.pos(), QGraphicsView().transform())
+            if isinstance(item, ConnectionPoint):
+                if not self.drawing_wire:
+                    self.drawing_wire = True
+                    self.start_point = item
+                else:
+                    self.drawing_wire = False
+                    self.add_wire(self.start_point, item)
+                    self.start_point = None
+            return True
+        return super().eventFilter(source, event)
